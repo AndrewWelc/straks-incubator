@@ -1,0 +1,48 @@
+version: '3.1'
+
+volumes:
+  mysql-data:
+  redis-data:
+
+services:
+  app:
+    image: straks/incubator-app
+    volumes:
+      - /var/www/storage
+      - .env:/var/www/.env
+      - ./docker/php/php-ini-overrides.ini:/etc/php/7.2/fpm/conf.d/99-overrides.in
+    environment:
+      - "DB_PORT=3306"
+      - "DB_HOST=database"
+      - "REDIS_HOST=cache"
+
+  web:
+    image: straks/incubator-web
+    volumes:
+      - "${LE_DIR}:/etc/letsencrypt"
+    ports:
+      - "80:80"
+      - "443:443"
+
+  database:
+    image: mysql:5.7.23
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./db-backup:/db
+    ports:
+        - "3306:3306"
+    environment:
+      - "MYSQL_DATABASE=helpus"
+      - "MYSQL_USER=admin"
+      - "MYSQL_PASSWORD=d22e0631f6ad6b36cc796b4457"
+      - "MYSQL_ROOT_PASSWORD=:Deupd(%y5qUstak"
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+
+  cache:
+    image: redis:4.0.10
+    volumes:
+      - redis-data:/var/lib/redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+

